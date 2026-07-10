@@ -16,6 +16,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.*;
+import static net.liukrast.eg.helper.EGPonderSceneHelpers.displayText;
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.Gauge.addPanelConnection;
 
 public class DisplayCollectorPonder implements Ponder {

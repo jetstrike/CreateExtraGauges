@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.*;
+import static net.liukrast.eg.helper.EGPonderSceneHelpers.displayText;
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.Gauge.*;
 
 public class PassiveGaugePonder implements Ponder {

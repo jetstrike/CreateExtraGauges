@@ -14,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.*;
+import static net.liukrast.eg.helper.EGPonderSceneHelpers.displayText;
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.Gauge.*;
 
 public class IntGaugePonder implements Ponder {

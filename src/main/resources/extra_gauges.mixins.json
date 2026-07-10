@@ -13,6 +13,7 @@
 	"FactoryPanelBehaviourMixin",
     "LinkHandlerMixin",
     "LinkRendererMixin",
+	"NavTableBlockEntityMixin",
 	"PackagerBlockEntityMixin",
 	"PackageRepackageHelperMixin",
 	"ServerboundConfigPacketMixin",

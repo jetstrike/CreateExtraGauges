@@ -9,6 +9,7 @@ import net.liukrast.deployer.lib.helper.ponder.Ponder;
 import net.minecraft.core.Direction;
 
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.*;
+import static net.liukrast.eg.helper.EGPonderSceneHelpers.displayText;
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.Gauge.*;
 
 public class LogicGaugePonder implements Ponder {

@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.*;
+import static net.liukrast.eg.helper.EGPonderSceneHelpers.displayText;
 import static net.liukrast.deployer.lib.helper.PonderSceneHelpers.Gauge.*;
 
 public class FilterGaugePonder implements Ponder {

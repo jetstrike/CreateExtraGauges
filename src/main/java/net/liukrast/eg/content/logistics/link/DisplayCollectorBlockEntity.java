@@ -86,6 +86,15 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     public void onLoad() {
         super.onLoad();
         if(level == null) return;
+
+        if (!level.isClientSide && activeSource == null) {
+            var sources = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(level, getSourcePosition());
+            if (!sources.isEmpty()) {
+                activeSource = sources.get(0);
+                updateGatheredData();
+            }
+        }
+
         var be = this.level.getBlockEntity(getSourcePosition());
         if(!(be instanceof DCFinder finder)) return;
         var set = finder.extra_gauges$targetingDisplayCollectors();
