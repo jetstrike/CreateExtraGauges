@@ -22,6 +22,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.Level;
@@ -40,6 +41,8 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+        // Do NOT call super.addBehaviours(behaviours) to prevent registering the duplicate
+        // vanilla FactoryPanelSupportBehaviour which conflicts and overwrites NBT save data.
         behaviours.add(computerBehaviour = com.simibubi.create.compat.computercraft.ComputerCraftProxy.behaviour(this));
         behaviours.add(factoryPanelSupport = new AbstractPanelSupportBehaviour(this, () -> true, () -> {}) {
             @Override
@@ -81,6 +84,7 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     public void setComponent(Component component) {
         this.component = component;
         factoryPanelSupport.notifyPanels();
+        sendData(); // Sync to client immediately on text update
     }
 
     @Override
@@ -129,6 +133,15 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
                 DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
             }
             registeredSource = null;
+        }
+    }
+
+    @Override
+    public void sendData() {
+        // Use the physical level field instead of redirected getLevel() to ensure
+        // block entity update packets are sent in the Shipyard level where it resides.
+        if (this.level instanceof ServerLevel serverLevel) {
+            serverLevel.getChunkSource().blockChanged(worldPosition);
         }
     }
 
