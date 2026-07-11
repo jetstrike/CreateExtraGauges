@@ -106,8 +106,13 @@ public class StringPanelBehaviour extends AbstractPanelBehaviour {
     public void notifiedFromInput() {
         if (!active)
             return;
+        net.liukrast.eg.ExtraGauges.CONSTANTS.getLogger().info("StringPanel notified: slot=" + slot + ", targeting=" + targeting.size() + ", targetedByLinks=" + targetedByLinks.size());
         List<String> result = getAllValues(DeployerPanelConnections.STRING.get());
-        if(result == null) return;
+        if (result == null) {
+            net.liukrast.eg.ExtraGauges.CONSTANTS.getLogger().warn("StringPanel notified aborted: result is null (abort state)");
+            return;
+        }
+        net.liukrast.eg.ExtraGauges.CONSTANTS.getLogger().info("StringPanel result size: " + result.size() + ", values: " + result);
         String res = String.join(join, result);
         int maxLength = ExtraGaugesConfig.STRING_MAX_LENGTH.get();
         if (res.length() > maxLength) res = res.substring(0, maxLength);
