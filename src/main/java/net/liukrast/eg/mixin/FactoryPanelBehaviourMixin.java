@@ -59,16 +59,18 @@ public abstract class FactoryPanelBehaviourMixin implements WidthModifier {
         }
     }
 
-    @Inject(method = "read", at = @At(value = "INVOKE", target = "Ljava/util/Set;clear()V", ordinal = 0), cancellable = true)
-    private void onRead(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci, @Local(ordinal = 1) CompoundTag panelTag) {
-        FactoryPanelBehaviour behavior = (FactoryPanelBehaviour) (Object) this;
-        if (RelativeNBTUtils.readTargetingRelative(panelTag, registries, behavior.getPos(), targeting)) {
-            RelativeNBTUtils.readTargetedByRelative(panelTag, registries, behavior.getPos(), targetedBy);
-            RelativeNBTUtils.readTargetedByLinksRelative(panelTag, registries, behavior.getPos(), targetedByLinks);
-            if ((Object) this instanceof FPBExtension fpb) {
-                RelativeNBTUtils.readTargetedByExtraRelative(panelTag, registries, behavior.getPos(), fpb.deployer$getExtra());
+    @Inject(method = "read", at = @At("RETURN"))
+    private void onRead(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
+        CompoundTag panelTag = nbt.getCompound(CreateLang.asId(slot.name()));
+        if (!panelTag.isEmpty()) {
+            FactoryPanelBehaviour behavior = (FactoryPanelBehaviour) (Object) this;
+            if (RelativeNBTUtils.readTargetingRelative(panelTag, registries, behavior.getPos(), targeting)) {
+                RelativeNBTUtils.readTargetedByRelative(panelTag, registries, behavior.getPos(), targetedBy);
+                RelativeNBTUtils.readTargetedByLinksRelative(panelTag, registries, behavior.getPos(), targetedByLinks);
+                if ((Object) this instanceof FPBExtension fpb) {
+                    RelativeNBTUtils.readTargetedByExtraRelative(panelTag, registries, behavior.getPos(), fpb.deployer$getExtra());
+                }
             }
-            ci.cancel();
         }
     }
 }
