@@ -35,7 +35,6 @@ public abstract class FactoryPanelBehaviourMixin implements WidthModifier {
     @Shadow public Map<FactoryPanelPosition, FactoryPanelConnection> targetedBy;
     @Shadow public Map<BlockPos, FactoryPanelConnection> targetedByLinks;
     @Shadow public Set<FactoryPanelPosition> targeting;
-    @Shadow public abstract BlockPos getPos();
 
     /* DATA */
     @Inject(method = "write", at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/CompoundTag;putUUID(Ljava/lang/String;Ljava/util/UUID;)V"))
@@ -53,19 +52,21 @@ public abstract class FactoryPanelBehaviourMixin implements WidthModifier {
         if (!active) return;
         CompoundTag panelTag = nbt.getCompound(CreateLang.asId(slot.name()));
         if (!panelTag.isEmpty()) {
-            RelativeNBTUtils.writeTargetingRelative(panelTag, registries, getPos(), targeting);
-            RelativeNBTUtils.writeTargetedByRelative(panelTag, registries, getPos(), targetedBy.values());
-            RelativeNBTUtils.writeTargetedByLinksRelative(panelTag, registries, getPos(), targetedByLinks.values());
+            FactoryPanelBehaviour behavior = (FactoryPanelBehaviour) (Object) this;
+            RelativeNBTUtils.writeTargetingRelative(panelTag, registries, behavior.getPos(), targeting);
+            RelativeNBTUtils.writeTargetedByRelative(panelTag, registries, behavior.getPos(), targetedBy.values());
+            RelativeNBTUtils.writeTargetedByLinksRelative(panelTag, registries, behavior.getPos(), targetedByLinks.values());
         }
     }
 
     @Inject(method = "read", at = @At(value = "INVOKE", target = "Ljava/util/Set;clear()V", ordinal = 0), cancellable = true)
     private void onRead(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci, @Local(ordinal = 1) CompoundTag panelTag) {
-        if (RelativeNBTUtils.readTargetingRelative(panelTag, registries, getPos(), targeting)) {
-            RelativeNBTUtils.readTargetedByRelative(panelTag, registries, getPos(), targetedBy);
-            RelativeNBTUtils.readTargetedByLinksRelative(panelTag, registries, getPos(), targetedByLinks);
+        FactoryPanelBehaviour behavior = (FactoryPanelBehaviour) (Object) this;
+        if (RelativeNBTUtils.readTargetingRelative(panelTag, registries, behavior.getPos(), targeting)) {
+            RelativeNBTUtils.readTargetedByRelative(panelTag, registries, behavior.getPos(), targetedBy);
+            RelativeNBTUtils.readTargetedByLinksRelative(panelTag, registries, behavior.getPos(), targetedByLinks);
             if ((Object) this instanceof FPBExtension fpb) {
-                RelativeNBTUtils.readTargetedByExtraRelative(panelTag, registries, getPos(), fpb.deployer$getExtra());
+                RelativeNBTUtils.readTargetedByExtraRelative(panelTag, registries, behavior.getPos(), fpb.deployer$getExtra());
             }
             ci.cancel();
         }
