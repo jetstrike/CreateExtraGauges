@@ -129,6 +129,20 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (level == null || level.isClientSide) return;
+
+        // Force passive updates every 10 ticks to guarantee continuous display updates
+        // even if the source dimension/ticking loop is temporarily suspended or loaded out of order
+        refreshTicks++;
+        if (refreshTicks >= 10) {
+            refreshTicks = 0;
+            updateGatheredData();
+        }
+    }
+
+    @Override
     public void updateGatheredData() {
         if (level == null || level.isClientSide) return;
 
