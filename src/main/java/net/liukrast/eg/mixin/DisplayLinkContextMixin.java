@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = DisplayLinkContext.class, remap = false)
+@Mixin(DisplayLinkContext.class)
 public class DisplayLinkContextMixin {
     @Inject(method = "getSourceBlockEntity", at = @At("HEAD"), cancellable = true)
     private void getSourceBlockEntityCrossLevel(CallbackInfoReturnable<BlockEntity> cir) {

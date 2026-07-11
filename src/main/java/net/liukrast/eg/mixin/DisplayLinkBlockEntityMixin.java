@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.List;
 
-@Mixin(value = DisplayLinkBlockEntity.class, remap = false)
+@Mixin(DisplayLinkBlockEntity.class)
 public class DisplayLinkBlockEntityMixin {
     @Redirect(
         method = "updateGatheredData",
