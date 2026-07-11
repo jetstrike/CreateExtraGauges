@@ -7,11 +7,13 @@
   "package": "net.liukrast.eg.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+	"AbstractPanelSupportBehaviourMixin",
 	"BeltTunnelBlockEntityMixin",
     "ContraptionMixin",
 	"DisplayLinkBlockMixin",
 	"DisplayLinkContextMixin",
 	"FactoryPanelBehaviourMixin",
+	"FactoryPanelSupportBehaviourMixin",
     "LinkHandlerMixin",
 	"NavTableBlockEntityMixin",
 	"NavigationTableDisplaySourceMixin",
