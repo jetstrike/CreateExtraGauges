@@ -157,9 +157,9 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
                 if (!source.equals(registeredSource)) {
                     if (registeredSource != null) {
-                        DisplayCollectorIndex.remove(targetLevel, registeredSource, worldPosition);
+                        DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
                     }
-                    DisplayCollectorIndex.add(targetLevel, source, worldPosition);
+                    DisplayCollectorIndex.add(level, source, worldPosition);
                     registeredSource = source;
                 }
             } else {
