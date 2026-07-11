@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import net.liukrast.eg.ExtraGauges;
 
 import java.util.Iterator;
 
@@ -20,9 +21,12 @@ public abstract class AbstractPanelSupportBehaviourMixin {
     )
     private void redirectRemoveAllValues(Iterator<FactoryPanelPosition> iterator, @Local FactoryPanelPosition panelPos) {
         BlockState state = ((AbstractPanelSupportBehaviour) (Object) this).getWorld().getBlockState(panelPos.pos());
-        if (AllBlocks.FACTORY_GAUGE.has(state)) {
+        boolean isGauge = AllBlocks.FACTORY_GAUGE.has(state);
+        ExtraGauges.CONSTANTS.getLogger().info("getAllValuesWithSource: behaviour is null at " + panelPos.pos() + ", blockState=" + state.getBlock() + ", isGauge=" + isGauge);
+        if (isGauge) {
             return;
         }
+        ExtraGauges.CONSTANTS.getLogger().warn("getAllValuesWithSource: REMOVING link to " + panelPos.pos() + " because blockState=" + state.getBlock() + " is not a Factory Gauge!");
         iterator.remove();
     }
 }

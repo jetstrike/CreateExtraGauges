@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import net.liukrast.eg.ExtraGauges;
 
 import java.util.Iterator;
 
@@ -20,9 +21,12 @@ public abstract class FactoryPanelSupportBehaviourMixin {
     )
     private void redirectRemoveNotify(Iterator<FactoryPanelPosition> iterator, @Local FactoryPanelPosition panelPos) {
         BlockState state = ((FactoryPanelSupportBehaviour) (Object) this).getWorld().getBlockState(panelPos.pos());
-        if (AllBlocks.FACTORY_GAUGE.has(state)) {
+        boolean isGauge = AllBlocks.FACTORY_GAUGE.has(state);
+        ExtraGauges.CONSTANTS.getLogger().info("notifyPanels: behaviour is null at " + panelPos.pos() + ", blockState=" + state.getBlock() + ", isGauge=" + isGauge);
+        if (isGauge) {
             return;
         }
+        ExtraGauges.CONSTANTS.getLogger().warn("notifyPanels: REMOVING link to " + panelPos.pos() + " because blockState=" + state.getBlock() + " is not a Factory Gauge!");
         iterator.remove();
     }
 
@@ -32,9 +36,12 @@ public abstract class FactoryPanelSupportBehaviourMixin {
     )
     private void redirectRemoveTristate(Iterator<FactoryPanelPosition> iterator, @Local FactoryPanelPosition panelPos) {
         BlockState state = ((FactoryPanelSupportBehaviour) (Object) this).getWorld().getBlockState(panelPos.pos());
-        if (AllBlocks.FACTORY_GAUGE.has(state)) {
+        boolean isGauge = AllBlocks.FACTORY_GAUGE.has(state);
+        ExtraGauges.CONSTANTS.getLogger().info("shouldBePoweredTristate: behaviour is null at " + panelPos.pos() + ", blockState=" + state.getBlock() + ", isGauge=" + isGauge);
+        if (isGauge) {
             return;
         }
+        ExtraGauges.CONSTANTS.getLogger().warn("shouldBePoweredTristate: REMOVING link to " + panelPos.pos() + " because blockState=" + state.getBlock() + " is not a Factory Gauge!");
         iterator.remove();
     }
 }
