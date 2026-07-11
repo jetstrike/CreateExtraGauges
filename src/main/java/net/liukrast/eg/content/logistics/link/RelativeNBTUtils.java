@@ -67,11 +67,17 @@ public class RelativeNBTUtils {
                     return new FactoryPanelConnection(relPos, conn.amount, conn.arrowBendMode);
                 })
                 .collect(Collectors.toList());
-        panelTag.put("TargetedByRelative", CatnipCodecUtils.encode(Codec.list(FactoryPanelConnection.CODEC), registries, relative).orElseThrow());
+        var tag = CatnipCodecUtils.encode(Codec.list(FactoryPanelConnection.CODEC), registries, relative).orElseThrow();
+        panelTag.put("TargetedByRelative", tag);
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils writeTargetedByRelative: origin=" + origin + ", size=" + targetedBy.size() + ", relative=" + relative);
     }
 
     public static boolean readTargetedByRelative(CompoundTag panelTag, HolderLookup.Provider registries, BlockPos origin, Map<FactoryPanelPosition, FactoryPanelConnection> targetedBy) {
-        if (!panelTag.contains("TargetedByRelative")) return false;
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetedByRelative: origin=" + origin);
+        if (!panelTag.contains("TargetedByRelative")) {
+            ExtraGauges.CONSTANTS.getLogger().warn("RelativeNBTUtils readTargetedByRelative: TargetedByRelative NOT found!");
+            return false;
+        }
         targetedBy.clear();
         CatnipCodecUtils.decode(Codec.list(FactoryPanelConnection.CODEC), registries, panelTag.get("TargetedByRelative"))
                 .ifPresent(list -> list.forEach(conn -> {
@@ -79,6 +85,7 @@ public class RelativeNBTUtils {
                     var absConn = new FactoryPanelConnection(absPos, conn.amount, conn.arrowBendMode);
                     targetedBy.put(absPos, absConn);
                 }));
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetedByRelative: loaded size=" + targetedBy.size() + ", values=" + targetedBy.values());
         return true;
     }
 
@@ -89,11 +96,17 @@ public class RelativeNBTUtils {
                     return new FactoryPanelConnection(relPos, conn.amount, conn.arrowBendMode);
                 })
                 .collect(Collectors.toList());
-        panelTag.put("TargetedByLinksRelative", CatnipCodecUtils.encode(Codec.list(FactoryPanelConnection.CODEC), registries, relative).orElseThrow());
+        var tag = CatnipCodecUtils.encode(Codec.list(FactoryPanelConnection.CODEC), registries, relative).orElseThrow();
+        panelTag.put("TargetedByLinksRelative", tag);
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils writeTargetedByLinksRelative: origin=" + origin + ", size=" + targetedByLinks.size() + ", relative=" + relative);
     }
 
     public static boolean readTargetedByLinksRelative(CompoundTag panelTag, HolderLookup.Provider registries, BlockPos origin, Map<BlockPos, FactoryPanelConnection> targetedByLinks) {
-        if (!panelTag.contains("TargetedByLinksRelative")) return false;
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetedByLinksRelative: origin=" + origin);
+        if (!panelTag.contains("TargetedByLinksRelative")) {
+            ExtraGauges.CONSTANTS.getLogger().warn("RelativeNBTUtils readTargetedByLinksRelative: TargetedByLinksRelative NOT found!");
+            return false;
+        }
         targetedByLinks.clear();
         CatnipCodecUtils.decode(Codec.list(FactoryPanelConnection.CODEC), registries, panelTag.get("TargetedByLinksRelative"))
                 .ifPresent(list -> list.forEach(conn -> {
@@ -101,6 +114,7 @@ public class RelativeNBTUtils {
                     var absConn = new FactoryPanelConnection(absPos, conn.amount, conn.arrowBendMode);
                     targetedByLinks.put(absPos.pos(), absConn);
                 }));
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetedByLinksRelative: loaded size=" + targetedByLinks.size() + ", values=" + targetedByLinks.values());
         return true;
     }
 
@@ -111,11 +125,17 @@ public class RelativeNBTUtils {
                     return new FactoryPanelConnection(relPos, conn.amount, conn.arrowBendMode);
                 })
                 .collect(Collectors.toList());
-        panelTag.put("TargetedByExtraRelative", CatnipCodecUtils.encode(Codec.list(FactoryPanelConnection.CODEC), registries, relative).orElseThrow());
+        var tag = CatnipCodecUtils.encode(Codec.list(FactoryPanelConnection.CODEC), registries, relative).orElseThrow();
+        panelTag.put("TargetedByExtraRelative", tag);
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils writeTargetedByExtraRelative: origin=" + origin + ", size=" + targetedByExtra.size() + ", relative=" + relative);
     }
 
     public static boolean readTargetedByExtraRelative(CompoundTag panelTag, HolderLookup.Provider registries, BlockPos origin, Map<BlockPos, FactoryPanelConnection> targetedByExtra) {
-        if (!panelTag.contains("TargetedByExtraRelative")) return false;
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetedByExtraRelative: origin=" + origin);
+        if (!panelTag.contains("TargetedByExtraRelative")) {
+            ExtraGauges.CONSTANTS.getLogger().warn("RelativeNBTUtils readTargetedByExtraRelative: TargetedByExtraRelative NOT found!");
+            return false;
+        }
         targetedByExtra.clear();
         CatnipCodecUtils.decode(Codec.list(FactoryPanelConnection.CODEC), registries, panelTag.get("TargetedByExtraRelative"))
                 .ifPresent(list -> list.forEach(conn -> {
@@ -123,6 +143,7 @@ public class RelativeNBTUtils {
                     var absConn = new FactoryPanelConnection(absPos, conn.amount, conn.arrowBendMode);
                     targetedByExtra.put(absPos.pos(), absConn);
                 }));
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetedByExtraRelative: loaded size=" + targetedByExtra.size() + ", values=" + targetedByExtra.values());
         return true;
     }
 }
