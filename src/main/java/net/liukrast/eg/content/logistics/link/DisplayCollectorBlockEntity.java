@@ -87,7 +87,7 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
     @Override
     public BlockPos getSourcePosition() {
-        return worldPosition.offset(targetOffset);
+        return targetOffset == null ? null : worldPosition.offset(targetOffset);
     }
 
     @Override
@@ -145,75 +145,92 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
     @Override
     public void tick() {
-        super.tick();
-        if (level == null || level.isClientSide) return;
+        try {
+            super.tick();
+            if (level == null || level.isClientSide) return;
 
-        refreshTicks++;
-        if (refreshTicks >= 10) {
-            refreshTicks = 0;
-            updateGatheredData();
+            refreshTicks++;
+            if (refreshTicks % 20 == 0) {
+                ExtraGauges.CONSTANTS.getLogger().info("DC tick: pos=" + worldPosition + ", refreshTicks=" + refreshTicks + ", removed=" + isRemoved() + ", targetOffset=" + targetOffset);
+            }
+            if (refreshTicks >= 10) {
+                refreshTicks = 0;
+                updateGatheredData();
+            }
+        } catch (Throwable t) {
+            ExtraGauges.CONSTANTS.getLogger().error("Error in DC tick", t);
         }
     }
 
     @Override
     public void updateGatheredData() {
-        if (level == null || level.isClientSide) return;
+        try {
+            if (level == null || level.isClientSide) return;
 
-        BlockPos sourcePosition = getSourcePosition();
-        BlockPos targetPosition = getTargetPosition();
+            BlockPos sourcePosition = getSourcePosition();
+            BlockPos targetPosition = getTargetPosition();
 
-        ExtraGauges.CONSTANTS.getLogger().info("DC update: source=" + sourcePosition + ", target=" + targetPosition + ", level=" + level.dimension().location() + ", panels=" + (factoryPanelSupport == null ? "null" : factoryPanelSupport.getLinkedPanels().size()));
+            ExtraGauges.CONSTANTS.getLogger().info("DC update: source=" + sourcePosition + ", target=" + targetPosition + ", level=" + level.dimension().location() + ", panels=" + (factoryPanelSupport == null ? "null" : factoryPanelSupport.getLinkedPanels().size()));
 
-        if (!level.isLoaded(targetPosition) || !level.isLoaded(sourcePosition)) {
-            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: targetLoaded=" + level.isLoaded(targetPosition) + ", sourceLoaded=" + level.isLoaded(sourcePosition));
-            return;
+            if (sourcePosition == null || targetPosition == null) {
+                ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: sourcePosition or targetPosition is null");
+                return;
+            }
+
+            if (!level.isLoaded(targetPosition) || !level.isLoaded(sourcePosition)) {
+                ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: targetLoaded=" + level.isLoaded(targetPosition) + ", sourceLoaded=" + level.isLoaded(sourcePosition));
+                return;
+            }
+
+            DisplayTarget target = DisplayTarget.get(level, targetPosition);
+            if (target == null) {
+                ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: target is null");
+                return;
+            }
+
+            if (activeTarget != target) {
+                activeTarget = target;
+                notifyUpdate();
+            }
+
+            var sources = DisplaySource.getAll(level, sourcePosition);
+            if (sources.isEmpty()) {
+                ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: sources is empty");
+                return;
+            }
+
+            var sourceObj = sources.get(0);
+            if (activeSource != sourceObj) {
+                activeSource = sourceObj;
+                notifyUpdate();
+            }
+
+            if (activeSource == null || activeTarget == null) {
+                ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: activeSource=" + activeSource + ", activeTarget=" + activeTarget);
+                return;
+            }
+
+            var sourceBE = level.getBlockEntity(sourcePosition);
+            if (sourceBE instanceof NavTableBlockEntity navBE) {
+                navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(level, sourcePosition);
+            }
+
+            ExtraGauges.CONSTANTS.getLogger().info("DC update transferring text... activeSource=" + activeSource.getClass().getSimpleName() + ", activeTarget=" + activeTarget.getClass().getSimpleName());
+
+            DisplayLinkContext context = new DisplayLinkContext(level, this);
+            activeSource.transferData(context, activeTarget, targetLine);
+            sendPulseNextSync();
+            sendData();
+        } catch (Throwable t) {
+            ExtraGauges.CONSTANTS.getLogger().error("Error in DC updateGatheredData", t);
         }
-
-        DisplayTarget target = DisplayTarget.get(level, targetPosition);
-        if (target == null) {
-            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: target is null");
-            return;
-        }
-
-        if (activeTarget != target) {
-            activeTarget = target;
-            notifyUpdate();
-        }
-
-        var sources = DisplaySource.getAll(level, sourcePosition);
-        if (sources.isEmpty()) {
-            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: sources is empty");
-            return;
-        }
-
-        var sourceObj = sources.get(0);
-        if (activeSource != sourceObj) {
-            activeSource = sourceObj;
-            notifyUpdate();
-        }
-
-        if (activeSource == null || activeTarget == null) {
-            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: activeSource=" + activeSource + ", activeTarget=" + activeTarget);
-            return;
-        }
-
-        var sourceBE = level.getBlockEntity(sourcePosition);
-        if (sourceBE instanceof NavTableBlockEntity navBE) {
-            navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(level, sourcePosition);
-        }
-
-        ExtraGauges.CONSTANTS.getLogger().info("DC update transferring text... activeSource=" + activeSource.getClass().getSimpleName() + ", activeTarget=" + activeTarget.getClass().getSimpleName());
-
-        DisplayLinkContext context = new DisplayLinkContext(level, this);
-        activeSource.transferData(context, activeTarget, targetLine);
-        sendPulseNextSync();
-        sendData();
     }
 
     private void registerAtSource() {
         if(level == null) return;
 
         BlockPos source = getSourcePosition();
+        if (source == null) return;
         
         if (!source.equals(registeredSource)) {
             if (registeredSource != null) {
