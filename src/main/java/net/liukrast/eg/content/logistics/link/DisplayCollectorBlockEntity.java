@@ -89,6 +89,12 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     }
 
     @Override
+    public void target(BlockPos targetPosition) {
+        super.target(targetPosition);
+        if(level != null && !isRemoved()) registerAtSource();
+    }
+
+    @Override
     public void onLoad() {
         super.onLoad();
         registerAtSource();

@@ -34,7 +34,7 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    archivesName = "extra_gauges_forked"
 }
 
 java {

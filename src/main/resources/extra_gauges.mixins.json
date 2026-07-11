@@ -12,16 +12,16 @@
 	"DisplayLinkBlockMixin",
 	"FactoryPanelBehaviourMixin",
     "LinkHandlerMixin",
-    "LinkRendererMixin",
 	"NavTableBlockEntityMixin",
 	"PackagerBlockEntityMixin",
 	"PackageRepackageHelperMixin",
-	"ServerboundConfigPacketMixin",
-    "ValueSettingsInputHandlerMixin"
+	"ServerboundConfigPacketMixin"
   ],
   "client": [
 	"ClickToLinkBlockItemMixin",
-	"FactoryPanelScreenMixin"
+	"FactoryPanelScreenMixin",
+    "LinkRendererMixin",
+    "ValueSettingsInputHandlerMixin"
   ],
   "injectors": {
 	"defaultRequire": 1

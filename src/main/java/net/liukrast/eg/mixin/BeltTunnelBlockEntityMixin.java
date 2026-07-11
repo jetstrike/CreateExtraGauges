@@ -35,6 +35,10 @@ public abstract class BeltTunnelBlockEntityMixin extends BlockEntity implements 
 
     @Inject(method = "write", at = @At("HEAD"))
     private void writeSafe(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
+        var level = getLevel();
+        if (level != null) {
+            extra_gauges$targetingDisplayCollectors.removeIf(pos -> level.isLoaded(pos) && !(level.getBlockEntity(pos) instanceof DisplayCollectorBlockEntity));
+        }
         ListTag list = new ListTag();
         var ops = registries.createSerializationContext(NbtOps.INSTANCE);
         for(BlockPos pos : extra_gauges$targetingDisplayCollectors) {
@@ -47,23 +51,15 @@ public abstract class BeltTunnelBlockEntityMixin extends BlockEntity implements 
 
     @Inject(method = "read", at = @At("HEAD"))
     private void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
-        if(!tag.contains("extra_gauges$targetingDisplayCollectors")) return;
-        ListTag list = tag.getList("extra_gauges$targetingDisplayCollectors", Tag.TAG_END); //TODO: CHECK
-        extra_gauges$targetingDisplayCollectors.clear();
-        var ops = registries.createSerializationContext(NbtOps.INSTANCE);
-        for(Tag tag1 : list) {
-            BlockPos.CODEC
-                    .parse(ops, tag1)
-                    .resultOrPartial(ExtraGauges.CONSTANTS.getLogger()::error)
-                    .ifPresent(pos -> {
-                        var level = getLevel();
-                        if(level == null || !level.isLoaded(pos)) {
-                            extra_gauges$targetingDisplayCollectors.add(pos);
-                            return;
-                        }
-                        if(!(level.getBlockEntity(pos) instanceof DisplayCollectorBlockEntity)) return;
-                        extra_gauges$targetingDisplayCollectors.add(pos);
-                    });
+        if (tag.get("extra_gauges$targetingDisplayCollectors") instanceof ListTag list) {
+            extra_gauges$targetingDisplayCollectors.clear();
+            var ops = registries.createSerializationContext(NbtOps.INSTANCE);
+            for(Tag tag1 : list) {
+                BlockPos.CODEC
+                        .parse(ops, tag1)
+                        .resultOrPartial(ExtraGauges.CONSTANTS.getLogger()::error)
+                        .ifPresent(extra_gauges$targetingDisplayCollectors::add);
+            }
         }
     }
 }
