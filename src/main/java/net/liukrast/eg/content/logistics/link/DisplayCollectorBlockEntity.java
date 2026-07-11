@@ -135,11 +135,26 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
         BlockPos sourcePosition = getSourcePosition();
         BlockPos targetPosition = getTargetPosition();
 
-        if (!level.isLoaded(targetPosition)) return;
-
         var server = level.getServer();
         if (server == null) return;
 
+        // 1. Resolve target (Nixie Tubes) cross-level
+        Level targetLevel = null;
+        DisplayTarget targetObj = null;
+        for (var serverLevel : server.getAllLevels()) {
+            if (serverLevel.isLoaded(targetPosition)) {
+                var tgt = DisplayTarget.get(serverLevel, targetPosition);
+                if (tgt != null) {
+                    targetObj = tgt;
+                    targetLevel = serverLevel;
+                    break;
+                }
+            }
+        }
+
+        if (targetObj == null) return;
+
+        // 2. Resolve source (Nav Table) cross-level
         Level sourceLevel = null;
         BlockEntity sourceBE = null;
         for (var serverLevel : server.getAllLevels()) {
@@ -155,14 +170,13 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
         if (sourceBE == null) return;
 
-        DisplayTarget target = DisplayTarget.get(level, targetPosition);
-        if (target == null) return;
-
-        if (activeTarget != target) {
-            activeTarget = target;
+        // 3. Update activeTarget
+        if (activeTarget != targetObj) {
+            activeTarget = targetObj;
             notifyUpdate();
         }
 
+        // 4. Resolve Display Source
         var sources = DisplaySource.getAll(sourceLevel, sourcePosition);
         if (sources.isEmpty()) return;
 
@@ -174,13 +188,15 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
         if (activeSource == null || activeTarget == null) return;
 
+        // 5. Populate sublevel dynamically if it is a NavTableBlockEntity
         if (sourceBE instanceof NavTableBlockEntity navBE) {
             if (navBE.subLevel == null) {
                 navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(sourceLevel, sourcePosition);
             }
         }
 
-        DisplayLinkContext context = new DisplayLinkContext(level, this);
+        // 6. Transfer the data using the targetLevel context
+        DisplayLinkContext context = new DisplayLinkContext(targetLevel, this);
         activeSource.transferData(context, activeTarget, targetLine);
         sendPulseNextSync();
         sendData();
