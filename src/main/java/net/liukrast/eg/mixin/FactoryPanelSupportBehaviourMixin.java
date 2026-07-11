@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.liukrast.eg.ExtraGauges;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.HolderLookup;
+import net.liukrast.eg.content.logistics.link.RelativeNBTUtils;
 
 import java.util.Iterator;
 import java.util.List;
@@ -58,15 +59,19 @@ public abstract class FactoryPanelSupportBehaviourMixin {
     private void onWrite(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
         var support = (FactoryPanelSupportBehaviour) (Object) this;
         if (support.blockEntity != null) {
-            ExtraGauges.CONSTANTS.getLogger().info("FactoryPanelSupport write: parent=" + support.blockEntity.getBlockPos() + ", class=" + support.blockEntity.getClass().getSimpleName() + ", gauges=" + linkedPanels);
+            RelativeNBTUtils.writeLinkedPanelsRelative(nbt, registries, support.blockEntity.getBlockPos(), linkedPanels);
+            ExtraGauges.CONSTANTS.getLogger().info("FactoryPanelSupport write (relative): parent=" + support.blockEntity.getBlockPos() + ", class=" + support.blockEntity.getClass().getSimpleName() + ", gauges=" + linkedPanels);
         }
     }
 
-    @Inject(method = "read", at = @At("RETURN"))
+    @Inject(method = "read", at = @At("HEAD"), cancellable = true)
     private void onRead(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
         var support = (FactoryPanelSupportBehaviour) (Object) this;
         if (support.blockEntity != null) {
-            ExtraGauges.CONSTANTS.getLogger().info("FactoryPanelSupport read: parent=" + support.blockEntity.getBlockPos() + ", class=" + support.blockEntity.getClass().getSimpleName() + ", gauges=" + linkedPanels);
+            if (RelativeNBTUtils.readLinkedPanelsRelative(nbt, registries, support.blockEntity.getBlockPos(), linkedPanels)) {
+                ExtraGauges.CONSTANTS.getLogger().info("FactoryPanelSupport read (relative): parent=" + support.blockEntity.getBlockPos() + ", class=" + support.blockEntity.getClass().getSimpleName() + ", gauges=" + linkedPanels);
+                ci.cancel();
+            }
         }
     }
 }
