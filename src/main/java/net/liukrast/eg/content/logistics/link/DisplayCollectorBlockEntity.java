@@ -149,49 +149,18 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
         BlockPos sourcePosition = getSourcePosition();
         BlockPos targetPosition = getTargetPosition();
 
-        var server = level.getServer();
-        if (server == null) return;
+        // Rely on VS2's transparent redirection on level (OverworldLevel)
+        if (!level.isLoaded(targetPosition) || !level.isLoaded(sourcePosition)) return;
 
-        // 1. Resolve target (Nixie Tubes) cross-level
-        Level targetLevel = null;
-        DisplayTarget targetObj = null;
-        for (var serverLevel : server.getAllLevels()) {
-            if (serverLevel.isLoaded(targetPosition)) {
-                var tgt = DisplayTarget.get(serverLevel, targetPosition);
-                if (tgt != null) {
-                    targetObj = tgt;
-                    targetLevel = serverLevel;
-                    break;
-                }
-            }
-        }
+        DisplayTarget target = DisplayTarget.get(level, targetPosition);
+        if (target == null) return;
 
-        if (targetObj == null) return;
-
-        // 2. Resolve source (Nav Table) cross-level
-        Level sourceLevel = null;
-        BlockEntity sourceBE = null;
-        for (var serverLevel : server.getAllLevels()) {
-            if (serverLevel.isLoaded(sourcePosition)) {
-                var be = serverLevel.getBlockEntity(sourcePosition);
-                if (be != null) {
-                    sourceBE = be;
-                    sourceLevel = serverLevel;
-                    break;
-                }
-            }
-        }
-
-        if (sourceBE == null) return;
-
-        // 3. Update activeTarget
-        if (activeTarget != targetObj) {
-            activeTarget = targetObj;
+        if (activeTarget != target) {
+            activeTarget = target;
             notifyUpdate();
         }
 
-        // 4. Resolve Display Source
-        var sources = DisplaySource.getAll(sourceLevel, sourcePosition);
+        var sources = DisplaySource.getAll(level, sourcePosition);
         if (sources.isEmpty()) return;
 
         var sourceObj = sources.get(0);
@@ -202,13 +171,12 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
         if (activeSource == null || activeTarget == null) return;
 
-        // 5. Populate sublevel dynamically if it is a NavTableBlockEntity
+        var sourceBE = level.getBlockEntity(sourcePosition);
         if (sourceBE instanceof NavTableBlockEntity navBE) {
-            navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(sourceLevel, sourcePosition);
+            navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(level, sourcePosition);
         }
 
-        // 6. Transfer the data using the targetLevel context
-        DisplayLinkContext context = new DisplayLinkContext(targetLevel, this);
+        DisplayLinkContext context = new DisplayLinkContext(level, this);
         activeSource.transferData(context, activeTarget, targetLine);
         sendPulseNextSync();
         sendData();
