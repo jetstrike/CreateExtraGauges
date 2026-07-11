@@ -54,6 +54,7 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
+        ExtraGauges.CONSTANTS.getLogger().info("DC read NBT: pos=" + worldPosition + ", targetOffset=" + targetOffset + ", tagTargetOffset=" + (tag.contains("TargetOffset") ? tag.get("TargetOffset") : "null"));
         if(level != null && !isRemoved()) registerAtSource();
         if(!tag.contains("text")) return;
         DynamicOps<Tag> dynamicops = registries.createSerializationContext(NbtOps.INSTANCE);
@@ -161,11 +162,9 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
             if (level == null || level.isClientSide) return;
 
             refreshTicks++;
-            if (refreshTicks % 20 == 0) {
-                ExtraGauges.CONSTANTS.getLogger().info("DC tick: pos=" + worldPosition + ", refreshTicks=" + refreshTicks + ", removed=" + isRemoved() + ", targetOffset=" + targetOffset);
-            }
             if (refreshTicks >= 10) {
                 refreshTicks = 0;
+                ExtraGauges.CONSTANTS.getLogger().info("DC tick: pos=" + worldPosition + ", removed=" + isRemoved() + ", targetOffset=" + targetOffset);
                 updateGatheredData();
             }
         } catch (Throwable t) {
