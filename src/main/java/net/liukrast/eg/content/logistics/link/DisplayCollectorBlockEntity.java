@@ -40,8 +40,6 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        // Do NOT call super.addBehaviours(behaviours) to prevent registering the duplicate
-        // vanilla FactoryPanelSupportBehaviour which conflicts and overwrites NBT save data.
         behaviours.add(computerBehaviour = com.simibubi.create.compat.computercraft.ComputerCraftProxy.behaviour(this));
         behaviours.add(factoryPanelSupport = new AbstractPanelSupportBehaviour(this, () -> true, () -> {}) {
             @Override
@@ -139,8 +137,6 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
         super.tick();
         if (level == null || level.isClientSide) return;
 
-        // Force passive updates every 10 ticks to guarantee continuous display updates
-        // even if the source dimension/ticking loop is temporarily suspended or loaded out of order
         refreshTicks++;
         if (refreshTicks >= 10) {
             refreshTicks = 0;
@@ -155,11 +151,18 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
         BlockPos sourcePosition = getSourcePosition();
         BlockPos targetPosition = getTargetPosition();
 
-        // Rely on VS2's transparent redirection on level (OverworldLevel)
-        if (!level.isLoaded(targetPosition) || !level.isLoaded(sourcePosition)) return;
+        ExtraGauges.CONSTANTS.getLogger().info("DC update: source=" + sourcePosition + ", target=" + targetPosition + ", level=" + level.dimension().location());
+
+        if (!level.isLoaded(targetPosition) || !level.isLoaded(sourcePosition)) {
+            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: targetLoaded=" + level.isLoaded(targetPosition) + ", sourceLoaded=" + level.isLoaded(sourcePosition));
+            return;
+        }
 
         DisplayTarget target = DisplayTarget.get(level, targetPosition);
-        if (target == null) return;
+        if (target == null) {
+            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: target is null");
+            return;
+        }
 
         if (activeTarget != target) {
             activeTarget = target;
@@ -167,7 +170,10 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
         }
 
         var sources = DisplaySource.getAll(level, sourcePosition);
-        if (sources.isEmpty()) return;
+        if (sources.isEmpty()) {
+            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: sources is empty");
+            return;
+        }
 
         var sourceObj = sources.get(0);
         if (activeSource != sourceObj) {
@@ -175,12 +181,17 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
             notifyUpdate();
         }
 
-        if (activeSource == null || activeTarget == null) return;
+        if (activeSource == null || activeTarget == null) {
+            ExtraGauges.CONSTANTS.getLogger().warn("DC update aborted: activeSource=" + activeSource + ", activeTarget=" + activeTarget);
+            return;
+        }
 
         var sourceBE = level.getBlockEntity(sourcePosition);
         if (sourceBE instanceof NavTableBlockEntity navBE) {
             navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(level, sourcePosition);
         }
+
+        ExtraGauges.CONSTANTS.getLogger().info("DC update transferring text... activeSource=" + activeSource.getClass().getSimpleName() + ", activeTarget=" + activeTarget.getClass().getSimpleName());
 
         DisplayLinkContext context = new DisplayLinkContext(level, this);
         activeSource.transferData(context, activeTarget, targetLine);
