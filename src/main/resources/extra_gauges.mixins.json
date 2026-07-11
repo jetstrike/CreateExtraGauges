@@ -10,6 +10,7 @@
 	"BeltTunnelBlockEntityMixin",
     "ContraptionMixin",
 	"DisplayLinkBlockMixin",
+	"DisplayLinkBlockEntityMixin",
 	"FactoryPanelBehaviourMixin",
     "LinkHandlerMixin",
 	"NavTableBlockEntityMixin",
