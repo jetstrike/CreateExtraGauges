@@ -4,6 +4,9 @@ import com.mojang.serialization.DynamicOps;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 import com.simibubi.create.content.redstone.displayLink.DisplayLinkBlockEntity;
+import com.simibubi.create.content.redstone.displayLink.DisplayLinkContext;
+import com.simibubi.create.api.behaviour.display.DisplaySource;
+import com.simibubi.create.api.behaviour.display.DisplayTarget;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.liukrast.deployer.lib.logistics.board.connection.AbstractPanelSupportBehaviour;
 import net.liukrast.deployer.lib.logistics.board.connection.PanelConnectionBuilder;
@@ -11,6 +14,7 @@ import net.liukrast.deployer.lib.registry.DeployerPanelConnections;
 import net.liukrast.eg.ExtraGauges;
 import net.liukrast.eg.mixinExtension.DCFinder;
 import net.liukrast.eg.registry.EGBlockEntityTypes;
+import net.liukrast.eg.registry.EGBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -20,8 +24,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
 import net.minecraft.world.level.Level;
+import dev.ryanhcode.sable.Sable;
+import dev.ryanhcode.sable.sublevel.SubLevel;
+import dev.simulated_team.simulated.content.blocks.nav_table.NavTableBlockEntity;
+
 import java.util.List;
 
 public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
@@ -45,8 +52,6 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
-        // At placement, ClickToLinkBlockItem applies "TargetOffset" through block
-        // entity NBT after onLoad has already run, so re-register here as well
         if(level != null && !isRemoved()) registerAtSource();
         if(!tag.contains("text")) return;
         DynamicOps<Tag> dynamicops = registries.createSerializationContext(NbtOps.INSTANCE);
@@ -123,10 +128,77 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
         }
     }
 
+    @Override
+    public void updateGatheredData() {
+        if (level == null || level.isClientSide) return;
+
+        BlockPos sourcePosition = getSourcePosition();
+        BlockPos targetPosition = getTargetPosition();
+
+        if (!level.isLoaded(targetPosition)) return;
+
+        var server = level.getServer();
+        if (server == null) return;
+
+        Level sourceLevel = null;
+        BlockEntity sourceBE = null;
+        for (var serverLevel : server.getAllLevels()) {
+            if (serverLevel.isLoaded(sourcePosition)) {
+                var be = serverLevel.getBlockEntity(sourcePosition);
+                if (be != null) {
+                    sourceBE = be;
+                    sourceLevel = serverLevel;
+                    break;
+                }
+            }
+        }
+
+        if (sourceBE == null) return;
+
+        DisplayTarget target = DisplayTarget.get(level, targetPosition);
+        if (target == null) return;
+
+        if (activeTarget != target) {
+            activeTarget = target;
+            notifyUpdate();
+        }
+
+        var sources = DisplaySource.getAll(sourceLevel, sourcePosition);
+        if (sources.isEmpty()) return;
+
+        var sourceObj = sources.get(0);
+        if (activeSource != sourceObj) {
+            activeSource = sourceObj;
+            notifyUpdate();
+        }
+
+        if (activeSource == null || activeTarget == null) return;
+
+        if (sourceBE instanceof NavTableBlockEntity navBE) {
+            if (navBE.subLevel == null) {
+                navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(sourceLevel, sourcePosition);
+            }
+        }
+
+        DisplayLinkContext context = new DisplayLinkContext(level, this);
+        activeSource.transferData(context, activeTarget, targetLine);
+        sendPulseNextSync();
+        sendData();
+    }
+
     private void registerAtSource() {
         if(level == null) return;
 
         BlockPos source = getSourcePosition();
+        
+        if (!source.equals(registeredSource)) {
+            if (registeredSource != null) {
+                DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+            }
+            DisplayCollectorIndex.add(level, source, worldPosition);
+            registeredSource = source;
+        }
+
         var server = level.getServer();
         if (server != null) {
             Level targetLevel = null;
@@ -148,36 +220,12 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
                 }
 
                 if (activeSource == null) {
-                    var sources = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(targetLevel, source);
+                    var sources = DisplaySource.getAll(targetLevel, source);
                     if (!sources.isEmpty()) {
                         activeSource = sources.get(0);
                         updateGatheredData();
                     }
                 }
-
-                if (!source.equals(registeredSource)) {
-                    if (registeredSource != null) {
-                        DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
-                    }
-                    DisplayCollectorIndex.add(level, source, worldPosition);
-                    registeredSource = source;
-                }
-            } else {
-                if (!source.equals(registeredSource)) {
-                    if (registeredSource != null) {
-                        DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
-                    }
-                    DisplayCollectorIndex.add(level, source, worldPosition);
-                    registeredSource = source;
-                }
-            }
-        } else {
-            if (!source.equals(registeredSource)) {
-                if (registeredSource != null) {
-                    DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
-                }
-                DisplayCollectorIndex.add(level, source, worldPosition);
-                registeredSource = source;
             }
         }
     }
