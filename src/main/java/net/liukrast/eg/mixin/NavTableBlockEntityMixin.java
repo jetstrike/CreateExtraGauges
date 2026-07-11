@@ -35,6 +35,11 @@ public abstract class NavTableBlockEntityMixin extends BlockEntity implements DC
     }
 
     @Override
+    public Level getLevel() {
+        return this.level;
+    }
+
+    @Override
     public Set<BlockPos> extra_gauges$targetingDisplayCollectors() {
         return extra_gauges$targetingDisplayCollectors;
     }

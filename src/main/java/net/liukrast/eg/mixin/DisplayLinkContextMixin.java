@@ -23,9 +23,7 @@ public class DisplayLinkContextMixin {
                 var be = serverLevel.getBlockEntity(sourcePos);
                 if (be != null) {
                     if (be instanceof NavTableBlockEntity navBE) {
-                        if (navBE.subLevel == null) {
-                            navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(serverLevel, sourcePos);
-                        }
+                        navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(serverLevel, sourcePos);
                     }
                     cir.setReturnValue(be);
                     return;

@@ -204,9 +204,7 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
         // 5. Populate sublevel dynamically if it is a NavTableBlockEntity
         if (sourceBE instanceof NavTableBlockEntity navBE) {
-            if (navBE.subLevel == null) {
-                navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(sourceLevel, sourcePosition);
-            }
+            navBE.subLevel = (SubLevel) Sable.HELPER.getContaining(sourceLevel, sourcePosition);
         }
 
         // 6. Transfer the data using the targetLevel context
