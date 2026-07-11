@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.liukrast.eg.ExtraGauges;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,14 +20,21 @@ public class RelativeNBTUtils {
         List<FactoryPanelPosition> relative = linkedPanels.stream()
                 .map(pos -> new FactoryPanelPosition(pos.pos().subtract(origin), pos.slot()))
                 .collect(Collectors.toList());
-        nbt.put("LinkedGaugesRelative", CatnipCodecUtils.encode(Codec.list(FactoryPanelPosition.CODEC), registries, relative).orElseThrow());
+        var tag = CatnipCodecUtils.encode(Codec.list(FactoryPanelPosition.CODEC), registries, relative).orElseThrow();
+        nbt.put("LinkedGaugesRelative", tag);
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils writeLinkedPanelsRelative: origin=" + origin + ", size=" + linkedPanels.size() + ", relative=" + relative);
     }
 
     public static boolean readLinkedPanelsRelative(CompoundTag nbt, HolderLookup.Provider registries, BlockPos origin, List<FactoryPanelPosition> linkedPanels) {
-        if (!nbt.contains("LinkedGaugesRelative")) return false;
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readLinkedPanelsRelative: origin=" + origin + ", keys=" + nbt.getAllKeys());
+        if (!nbt.contains("LinkedGaugesRelative")) {
+            ExtraGauges.CONSTANTS.getLogger().warn("RelativeNBTUtils readLinkedPanelsRelative: LinkedGaugesRelative NOT found!");
+            return false;
+        }
         linkedPanels.clear();
         CatnipCodecUtils.decode(Codec.list(FactoryPanelPosition.CODEC), registries, nbt.get("LinkedGaugesRelative"))
                 .ifPresent(list -> list.forEach(pos -> linkedPanels.add(new FactoryPanelPosition(origin.offset(pos.pos()), pos.slot()))));
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readLinkedPanelsRelative: loaded size=" + linkedPanels.size() + ", values=" + linkedPanels);
         return true;
     }
 
@@ -34,14 +42,21 @@ public class RelativeNBTUtils {
         Set<FactoryPanelPosition> relative = targeting.stream()
                 .map(pos -> new FactoryPanelPosition(pos.pos().subtract(origin), pos.slot()))
                 .collect(Collectors.toSet());
-        panelTag.put("TargetingRelative", CatnipCodecUtils.encode(CatnipCodecs.set(FactoryPanelPosition.CODEC), registries, relative).orElseThrow());
+        var tag = CatnipCodecUtils.encode(CatnipCodecs.set(FactoryPanelPosition.CODEC), registries, relative).orElseThrow();
+        panelTag.put("TargetingRelative", tag);
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils writeTargetingRelative: origin=" + origin + ", size=" + targeting.size() + ", relative=" + relative);
     }
 
     public static boolean readTargetingRelative(CompoundTag panelTag, HolderLookup.Provider registries, BlockPos origin, Set<FactoryPanelPosition> targeting) {
-        if (!panelTag.contains("TargetingRelative")) return false;
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetingRelative: origin=" + origin + ", keys=" + panelTag.getAllKeys());
+        if (!panelTag.contains("TargetingRelative")) {
+            ExtraGauges.CONSTANTS.getLogger().warn("RelativeNBTUtils readTargetingRelative: TargetingRelative NOT found!");
+            return false;
+        }
         targeting.clear();
         CatnipCodecUtils.decode(CatnipCodecs.set(FactoryPanelPosition.CODEC), registries, panelTag.get("TargetingRelative"))
                 .ifPresent(set -> set.forEach(pos -> targeting.add(new FactoryPanelPosition(origin.offset(pos.pos()), pos.slot()))));
+        ExtraGauges.CONSTANTS.getLogger().info("RelativeNBTUtils readTargetingRelative: loaded size=" + targeting.size() + ", values=" + targeting);
         return true;
     }
 
