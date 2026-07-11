@@ -137,7 +137,9 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     @Override
     public void sendData() {
         if (this.level instanceof ServerLevel serverLevel) {
-            serverLevel.getChunkSource().blockChanged(worldPosition);
+            serverLevel.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2 | 4 | 16);
+        } else {
+            super.sendData();
         }
     }
 
