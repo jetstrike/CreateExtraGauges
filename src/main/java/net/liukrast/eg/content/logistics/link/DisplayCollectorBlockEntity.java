@@ -21,6 +21,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import net.minecraft.world.level.Level;
 import java.util.List;
 
 public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
@@ -109,8 +110,15 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     @Override
     public void invalidate() {
         super.invalidate();
-        if(level != null && registeredSource != null) {
-            DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+        if (registeredSource != null) {
+            var server = level == null ? null : level.getServer();
+            if (server != null) {
+                for (var serverLevel : server.getAllLevels()) {
+                    DisplayCollectorIndex.remove(serverLevel, registeredSource, worldPosition);
+                }
+            } else if (level != null) {
+                DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+            }
             registeredSource = null;
         }
     }
@@ -118,28 +126,59 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     private void registerAtSource() {
         if(level == null) return;
 
-        if (!level.isClientSide && activeSource == null) {
-            var sources = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(level, getSourcePosition());
-            if (!sources.isEmpty()) {
-                activeSource = sources.get(0);
-                updateGatheredData();
+        BlockPos source = getSourcePosition();
+        var server = level.getServer();
+        if (server != null) {
+            Level targetLevel = null;
+            DCFinder targetFinder = null;
+            for (var serverLevel : server.getAllLevels()) {
+                var beAtPos = serverLevel.getBlockEntity(source);
+                if (beAtPos instanceof DCFinder finder) {
+                    targetFinder = finder;
+                    targetLevel = serverLevel;
+                    break;
+                }
+            }
+
+            if (targetFinder != null) {
+                var set = targetFinder.extra_gauges$targetingDisplayCollectors();
+                if (!set.contains(getBlockPos())) {
+                    set.add(getBlockPos());
+                    ((BlockEntity) targetFinder).setChanged();
+                }
+
+                if (activeSource == null) {
+                    var sources = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(targetLevel, source);
+                    if (!sources.isEmpty()) {
+                        activeSource = sources.get(0);
+                        updateGatheredData();
+                    }
+                }
+
+                if (!source.equals(registeredSource)) {
+                    if (registeredSource != null) {
+                        DisplayCollectorIndex.remove(targetLevel, registeredSource, worldPosition);
+                    }
+                    DisplayCollectorIndex.add(targetLevel, source, worldPosition);
+                    registeredSource = source;
+                }
+            } else {
+                if (!source.equals(registeredSource)) {
+                    if (registeredSource != null) {
+                        DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+                    }
+                    DisplayCollectorIndex.add(level, source, worldPosition);
+                    registeredSource = source;
+                }
+            }
+        } else {
+            if (!source.equals(registeredSource)) {
+                if (registeredSource != null) {
+                    DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+                }
+                DisplayCollectorIndex.add(level, source, worldPosition);
+                registeredSource = source;
             }
         }
-
-        BlockPos source = getSourcePosition();
-        if(!source.equals(registeredSource)) {
-            if(registeredSource != null)
-                DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
-            DisplayCollectorIndex.add(level, source, worldPosition);
-            registeredSource = source;
-        }
-        // Sources implementing DCFinder additionally persist the link, letting
-        // them notify collectors whose chunk is not loaded yet
-        var be = this.level.getBlockEntity(source);
-        if(!(be instanceof DCFinder finder)) return;
-        var set = finder.extra_gauges$targetingDisplayCollectors();
-        if(set.contains(getBlockPos())) return;
-        set.add(getBlockPos());
-        be.setChanged();
     }
 }
