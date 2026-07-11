@@ -82,6 +82,17 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     public void setComponent(Component component) {
         this.component = component;
         factoryPanelSupport.notifyPanels();
+        if (level != null && !level.isClientSide) {
+            for (FactoryPanelPosition panelPos : factoryPanelSupport.getLinkedPanels()) {
+                BlockEntity be = level.getBlockEntity(panelPos.pos());
+                if (be != null) {
+                    be.setChanged();
+                    if (level instanceof ServerLevel serverLevel) {
+                        serverLevel.sendBlockUpdated(panelPos.pos(), be.getBlockState(), be.getBlockState(), 2 | 4 | 16);
+                    }
+                }
+            }
+        }
         sendData();
     }
 
