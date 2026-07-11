@@ -6,14 +6,23 @@ import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSupportBeh
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.liukrast.eg.ExtraGauges;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
 
 import java.util.Iterator;
+import java.util.List;
 
 @Mixin(value = FactoryPanelSupportBehaviour.class, remap = false)
 public abstract class FactoryPanelSupportBehaviourMixin {
+
+    @Shadow
+    private List<FactoryPanelPosition> linkedPanels;
 
     @Redirect(
         method = "notifyPanels",
@@ -43,5 +52,21 @@ public abstract class FactoryPanelSupportBehaviourMixin {
         }
         ExtraGauges.CONSTANTS.getLogger().warn("shouldBePoweredTristate: REMOVING link to " + panelPos.pos() + " because blockState=" + state.getBlock() + " is not a Factory Gauge!");
         iterator.remove();
+    }
+
+    @Inject(method = "write", at = @At("HEAD"))
+    private void onWrite(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
+        var support = (FactoryPanelSupportBehaviour) (Object) this;
+        if (support.blockEntity != null) {
+            ExtraGauges.CONSTANTS.getLogger().info("FactoryPanelSupport write: parent=" + support.blockEntity.getBlockPos() + ", class=" + support.blockEntity.getClass().getSimpleName() + ", gauges=" + linkedPanels);
+        }
+    }
+
+    @Inject(method = "read", at = @At("RETURN"))
+    private void onRead(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
+        var support = (FactoryPanelSupportBehaviour) (Object) this;
+        if (support.blockEntity != null) {
+            ExtraGauges.CONSTANTS.getLogger().info("FactoryPanelSupport read: parent=" + support.blockEntity.getBlockPos() + ", class=" + support.blockEntity.getClass().getSimpleName() + ", gauges=" + linkedPanels);
+        }
     }
 }
