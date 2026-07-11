@@ -11,6 +11,7 @@
     "ContraptionMixin",
 	"DisplayLinkBlockMixin",
 	"DisplayLinkBlockEntityMixin",
+	"DisplayLinkContextMixin",
 	"FactoryPanelBehaviourMixin",
     "LinkHandlerMixin",
 	"NavTableBlockEntityMixin",
