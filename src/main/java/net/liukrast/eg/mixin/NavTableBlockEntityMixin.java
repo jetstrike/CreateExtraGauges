@@ -20,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import net.minecraft.world.level.Level;
+import net.liukrast.eg.content.logistics.link.DisplayCollectorIndex;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -70,6 +72,19 @@ public abstract class NavTableBlockEntityMixin extends BlockEntity implements DC
     @Inject(method = "tick", at = @At("TAIL"))
     private void onTick(CallbackInfo ci) {
         if (this.level == null || this.level.isClientSide) return;
+        
+        var server = this.level.getServer();
+        if (server != null) {
+            for (var serverLevel : server.getAllLevels()) {
+                for (BlockPos collectorPos : DisplayCollectorIndex.get(serverLevel, this.worldPosition)) {
+                    if (!extra_gauges$targetingDisplayCollectors.contains(collectorPos)) {
+                        extra_gauges$targetingDisplayCollectors.add(collectorPos);
+                        this.setChanged();
+                    }
+                }
+            }
+        }
+        
         DisplayLinkBlock.notifyGatherers(this.level, this.worldPosition);
     }
 }
