@@ -1,6 +1,7 @@
 package net.liukrast.eg.content.logistics.link;
 
 import com.mojang.serialization.DynamicOps;
+import com.simibubi.create.content.contraptions.StructureTransform;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 import com.simibubi.create.content.redstone.displayLink.DisplayLinkBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -17,12 +18,14 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
 public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     private Component component;
+    private BlockPos registeredSource;
     public DisplayCollectorBlockEntity(BlockPos pos, BlockState state) {
         super(EGBlockEntityTypes.DISPLAY_COLLECTOR.get(), pos, state);
     }
@@ -41,6 +44,9 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
+        // At placement, ClickToLinkBlockItem applies "TargetOffset" through block
+        // entity NBT after onLoad has already run, so re-register here as well
+        if(level != null && !isRemoved()) registerAtSource();
         if(!tag.contains("text")) return;
         DynamicOps<Tag> dynamicops = registries.createSerializationContext(NbtOps.INSTANCE);
         ComponentSerialization.FLAT_CODEC
@@ -85,6 +91,25 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     @Override
     public void onLoad() {
         super.onLoad();
+        registerAtSource();
+    }
+
+    @Override
+    public void transform(BlockEntity be, StructureTransform transform) {
+        super.transform(be, transform);
+        registerAtSource();
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        if(level != null && registeredSource != null) {
+            DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+            registeredSource = null;
+        }
+    }
+
+    private void registerAtSource() {
         if(level == null) return;
 
         if (!level.isClientSide && activeSource == null) {
@@ -95,7 +120,16 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
             }
         }
 
-        var be = this.level.getBlockEntity(getSourcePosition());
+        BlockPos source = getSourcePosition();
+        if(!source.equals(registeredSource)) {
+            if(registeredSource != null)
+                DisplayCollectorIndex.remove(level, registeredSource, worldPosition);
+            DisplayCollectorIndex.add(level, source, worldPosition);
+            registeredSource = source;
+        }
+        // Sources implementing DCFinder additionally persist the link, letting
+        // them notify collectors whose chunk is not loaded yet
+        var be = this.level.getBlockEntity(source);
         if(!(be instanceof DCFinder finder)) return;
         var set = finder.extra_gauges$targetingDisplayCollectors();
         if(set.contains(getBlockPos())) return;
