@@ -15,6 +15,7 @@
 	"FactoryPanelBehaviourMixin",
     "LinkHandlerMixin",
 	"NavTableBlockEntityMixin",
+	"NavigationTableDisplaySourceMixin",
 	"PackagerBlockEntityMixin",
 	"PackageRepackageHelperMixin",
 	"ServerboundConfigPacketMixin"
