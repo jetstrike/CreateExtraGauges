@@ -40,13 +40,16 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        super.addBehaviours(behaviours);
+        // Do NOT call super.addBehaviours(behaviours) to prevent registering the duplicate
+        // vanilla FactoryPanelSupportBehaviour which conflicts and overwrites NBT save data.
+        behaviours.add(computerBehaviour = com.simibubi.create.compat.computercraft.ComputerCraftProxy.behaviour(this));
         behaviours.add(factoryPanelSupport = new AbstractPanelSupportBehaviour(this, () -> true, () -> {}) {
             @Override
             public void addConnections(PanelConnectionBuilder builder) {
                 builder.registerOutput(DeployerPanelConnections.STRING, () -> component == null ? null : component.getString());
             }
         });
+        registerAwardables(behaviours, com.simibubi.create.foundation.advancement.AllAdvancements.DISPLAY_LINK, com.simibubi.create.foundation.advancement.AllAdvancements.DISPLAY_BOARD);
     }
 
     @Override
@@ -91,6 +94,9 @@ public class DisplayCollectorBlockEntity extends DisplayLinkBlockEntity {
     public BlockPos getTargetPosition() {
         for (FactoryPanelPosition position : factoryPanelSupport.getLinkedPanels())
             return position.pos();
+        if (targetOffset != null && !targetOffset.equals(BlockPos.ZERO)) {
+            return worldPosition.offset(targetOffset);
+        }
         return worldPosition.relative(getDirection());
     }
 
